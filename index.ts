@@ -12,7 +12,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import { formatMessages, sendMessage, streamThread } from './ai/threads';
 import { checkVector } from './ai/vectors';
-import { chunkForDiscord, getPerformance, Timeframe } from './lib/performance';
+import { chunkForDiscord, getPerformance, Timeframe, syncPortfolioToRedbtn } from './lib/performance';
 
 //! Horrible idea to hardcode the path to ffmpeg
 ffmpeg.setFfmpegPath("E:/Downloads/ffmpeg-2024-09-02-git-3f9ca51015-full_build/bin/ffmpeg.exe");
@@ -136,6 +136,10 @@ const main = async () => {
     });
 
     client.login(TOKEN);
+
+    // Sync portfolio to Redbtn library once on startup, then hourly
+    setTimeout(syncPortfolioToRedbtn, 5000);
+    setInterval(syncPortfolioToRedbtn, 60 * 60 * 1000);
   } catch (error) {
     console.error(error);
   }

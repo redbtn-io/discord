@@ -383,3 +383,39 @@ export function chunkForDiscord(text: string, max = 1900): string[] {
     if (buf) out.push(buf);
     return out;
 }
+
+export async function syncPortfolioToRedbtn(): Promise<void> {
+    const apiKey = process.env.REDBTN_API_KEY;
+    if (!apiKey) {
+        console.warn("REDBTN_API_KEY not set; skipping portfolio sync.");
+        return;
+    }
+    
+    try {
+        const report = await getPerformance('ytd');
+        const now = new Date();
+        const tzString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+        const markdown = `# The Progression Fund Portfolio\n\n**Last Synced:** ${tzString} ET\n\n${report}`;
+        
+        const res = await fetch('https://api.redbtn.io/v1/libraries/the-progression-fund-235t4o/documents/doc_ms7xvr5r_jzw5oz', {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdown,
+                wait: false
+            })
+        });
+        
+        if (!res.ok) {
+            const body = await res.text().catch(() => '');
+            console.error("Failed to sync portfolio to Redbtn:", res.status, body);
+        } else {
+            console.log(`Successfully synced portfolio to Redbtn at ${tzString} ET`);
+        }
+    } catch (e) {
+        console.error("Error syncing portfolio:", e);
+    }
+}
